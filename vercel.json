@@ -1,6 +1,9 @@
 {
     "cleanUrls": true,
-    "framework": null,
-    "buildCommand": null,
-    "installCommand": "npm install"
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/$1"
+        }
+    ]
 }
