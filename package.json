@@ -1,0 +1,15 @@
+{
+    "name": "coleccion-minerales-pra",
+    "version": "1.0.0",
+    "description": "Explora la belleza oculta de la tierra. Catálogo personal de minerales.",
+    "private": true,
+    "scripts": {
+        "start": "npx serve ."
+    },
+    "keywords": [
+        "pwa",
+        "minerals"
+    ],
+    "author": "Pascual Rizo",
+    "license": "ISC"
+}
