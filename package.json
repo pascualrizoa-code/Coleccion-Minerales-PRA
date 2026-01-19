@@ -4,7 +4,8 @@
     "description": "Explora la belleza oculta de la tierra. Catálogo personal de minerales.",
     "private": true,
     "scripts": {
-        "start": "npx serve ."
+        "start": "npx serve .",
+        "build": "echo 'No build step required'"
     },
     "keywords": [
         "pwa",
