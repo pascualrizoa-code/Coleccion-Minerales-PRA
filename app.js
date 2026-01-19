@@ -138,7 +138,10 @@ function openModal(mineral) {
     thumbs.innerHTML = '';
 
     mainImg.src = `imagenes/${id}/1.jpg`;
-    mainImg.onerror = () => { mainImg.src = 'https://via.placeholder.com/800x600?text=Imagen+no+disponible'; };
+    mainImg.onerror = () => {
+        mainImg.src = 'https://via.placeholder.com/800x600?text=Imagen+no+disponible';
+        mainImg.classList.add('no-image');
+    };
 
     // Try to load up to 4 images and maintain order
     const loadThumbs = async () => {
@@ -277,3 +280,27 @@ function rotateKiosk() {
 
 // Execute Init
 init();
+
+// PWA Update Notification Logic
+function showUpdateNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'update-notification';
+    notification.innerHTML = `
+        <div class="update-content">
+            <p>Hay una nueva versión disponible</p>
+            <button id="updateBtn">Actualizar</button>
+        </div>
+    `;
+    document.body.appendChild(notification);
+
+    document.getElementById('updateBtn').addEventListener('click', () => {
+        window.location.reload();
+    });
+}
+
+// Check for Service Worker updates
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        showUpdateNotification();
+    });
+}
