@@ -55,28 +55,30 @@ def excel_to_json():
         # Reemplazar NaN con valores apropiados
         print(f"\nProcesando datos...")
         
-        # Para campos de texto, reemplazar NaN con string vacío
-        text_columns = ['Variedad', 'Min_asociado', 'Transparencia', 'Cristal (mm)', 
-                       'Fecha Adquisición', 'Precio Compra', 'Notas', 'Info',
-                       'Brillo', 'Color', 'Hábito / Morfología']
-        
-        for col in text_columns:
+        # Primero, convertir las fechas a string o None para evitar NaTType errors
+        date_columns = ['Fecha Adquisición', 'Fecha Tasación']
+        for col in date_columns:
             if col in df.columns:
-                df[col] = df[col].fillna('')
+                df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) and hasattr(x, 'strftime') else (str(x) if pd.notnull(x) else None))
         
-        # Para campos numericos y de fecha, mantener como estan (pueden ser null en JSON)
-        # pero convertir NaN/NaT a None para que se serialice como null
-        special_columns = ['Peso (Gramos)', 'Valor estimado (€)', 'Fecha Adquisición', 'Fecha Tasación']
-        for col in special_columns:
-            if col in df.columns:
-                # Convertir a datetime si es posible para manejar NaT, luego a string o None
-                if 'Fecha' in col:
-                    df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) and hasattr(x, 'strftime') else (str(x) if pd.notnull(x) else None))
-                else:
-                    df[col] = df[col].where(pd.notna(df[col]), None)
+        # Reemplazar todos los demas NaN con None para que se convierta en null en JSON
+        # Usamos mask para evitar problemas con tipos de datos mixtos
+        df = df.astype(object).where(pd.notna(df), None)
         
         # Convertir a lista de diccionarios
         data = df.to_dict(orient='records')
+        
+        # Limpieza final: asegurarnos de que no queda ningun valor float('nan') en el diccionario
+        def clean_nan(obj):
+            if isinstance(obj, list):
+                return [clean_nan(i) for i in obj]
+            elif isinstance(obj, dict):
+                return {k: clean_nan(v) for k, v in obj.items()}
+            elif isinstance(obj, float) and pd.isna(obj):
+                return None
+            return obj
+
+        data = clean_nan(data)
         
         # Convertir a JSON con formato bonito
         print(f"\nGenerando JSON...")
