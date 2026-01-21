@@ -1,0 +1,8 @@
+.git
+.agent
+.gemini
+excel_to_json.py
+requirements.txt
+catalogo_minerales_backup_*.json
+screenshots
+node_modules
