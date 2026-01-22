@@ -97,7 +97,7 @@ Import-Excel -Path "ruta\a\tu\archivo.xlsx" | ConvertTo-Json -Depth 10 | Out-Fil
 2. Copia todo su contenido
 3. Reemplaza el contenido del archivo en tu proyecto:
    ```
-   c:\Users\Pascual\.gemini\antigravity\playground\prime-astro\web-minerales\catalogo_minerales.json
+   c:\Colección Minerales\catalogo_minerales.json
    ```
 
 **IMPORTANTE**: Asegúrate de que el JSON esté bien formado. Puedes validarlo en https://jsonlint.com/
@@ -108,7 +108,7 @@ Antes de subir a Netlify, verifica que todo funcione correctamente:
 
 // turbo
 ```powershell
-cd c:\Users\Pascual\.gemini\antigravity\playground\prime-astro\web-minerales
+cd "c:\Colección Minerales"
 python -m http.server 8000
 ```
 
@@ -124,7 +124,7 @@ Si tu sitio en Netlify está conectado a un repositorio de GitHub:
 
 // turbo
 ```powershell
-cd c:\Users\Pascual\.gemini\antigravity\playground\prime-astro\web-minerales
+cd "c:\Colección Minerales"
 git add catalogo_minerales.json
 git commit -m "Actualizar catálogo con nuevos minerales"
 git push origin main
@@ -145,7 +145,7 @@ npm install -g netlify-cli
 netlify login
 
 # Deploy
-cd c:\Users\Pascual\.gemini\antigravity\playground\prime-astro\web-minerales
+cd "c:\Colección Minerales"
 netlify deploy --prod
 ```
 
