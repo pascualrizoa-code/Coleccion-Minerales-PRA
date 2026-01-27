@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minerales-v2';
+const CACHE_NAME = 'minerales-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
