@@ -75,7 +75,8 @@ function renderGrid() {
                 <h3>${mineral.Mineral}</h3>
                 <span class="formula">${mineral["Fórmula química"] || ''}</span>
                 <div class="card-meta">
-                    <span><strong>Origen:</strong> ${mineral.Yacimiento || mineral.Pais}</span>
+                    <span><strong>Yacimiento:</strong> ${mineral.Yacimiento || '-'}</span>
+                    <span><strong>País:</strong> ${mineral.Pais || '-'}</span>
                     <span><strong>Clase:</strong> ${mineral["Clase química"]}</span>
                 </div>
             </div>
