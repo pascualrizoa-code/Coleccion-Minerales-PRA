@@ -127,7 +127,7 @@ function openModal(mineral) {
         <div class="detail-item"><h4>Hábito</h4><p>${mineral["Hábito / Morfología"] || '-'}</p></div>
         <div class="detail-item"><h4>Yacimiento</h4><p>${mineral.Yacimiento || '-'}</p></div>
         <div class="detail-item"><h4>País</h4><p>${mineral.Pais || '-'}</p></div>
-        <div class="detail-item"><h4>Dimensiones</h4><p>${mineral["Dimensiones (mm)"] || '-'}</p></div>
+        <div class="detail-item"><h4>Dimensiones</h4><p>${mineral["Dimensiones (mm)"] ? mineral["Dimensiones (mm)"] + ' mm' : '-'}</p></div>
         <div class="detail-item"><h4>Peso</h4><p>${mineral["Peso (Gramos)"] ? mineral["Peso (Gramos)"] + ' g' : '-'}</p></div>
         <div class="detail-item"><h4>Color</h4><p>${mineral.Color || '-'}</p></div>
         <div class="detail-item"><h4>Brillo</h4><p>${mineral.Brillo || '-'}</p></div>
