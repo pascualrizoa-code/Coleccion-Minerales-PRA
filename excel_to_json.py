@@ -1,128 +1,142 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Script para convertir el archivo Excel de minerales a JSON
-Uso: python excel_to_json.py
-"""
-
-import pandas as pd
+import openpyxl
 import json
+import datetime
+import shutil
 import os
-from datetime import datetime
+
+EXCEL_FILE = "Coleccion de minerales.xlsx"
+JSON_FILE = "catalogo_minerales.json"
+
+# Columnas del JSON y sus equivalentes en el Excel
+# El orden debe coincidir con las cabeceras del Excel
+COLUMN_MAP = {
+    "Nº Inventario": "Nº Inventario",
+    "Mineral": "Mineral",
+    "Variedad": "Variedad",
+    "Min_asociado": "Min_asociado",
+    "Fórmula química": "Fórmula química",
+    "Sistema cristalino": "Sistema cristalino",
+    "Clase química": "Clase química",
+    "Hábito / Morfología": "Hábito / Morfología",
+    "Color": "Color",
+    "Brillo": "Brillo",
+    "Transparencia": "Transparencia",
+    "Fluorescencia UVA": "Fluorescencia UVA",
+    "Dimensiones (mm)": "Dimensiones (mm)",
+    "Cristal (mm)": "Cristal (mm)",
+    "Peso (Gramos)": "Peso (Gramos)",
+    "Yacimiento": "Yacimiento",
+    "Pais": "Pais",
+    "Estado de conservación": "Estado de conservación",
+    "Intervención conservación": "Intervención conservación",
+    "Fecha Adquisición": "Fecha Adquisición",
+    "Precio Compra": "Precio Compra",
+    "Notas": "Notas",
+    "Info": "Info",
+    "Valor estimado (€)": "Valor estimado (€)",
+    "Fecha Tasación": "Fecha Tasación",
+    "Tasador": "Tasador",
+}
+
+# Campos numéricos
+NUMERIC_FIELDS = {"Peso (Gramos)", "Precio Compra", "Valor estimado (€)"}
+
+# Campos de fecha
+DATE_FIELDS = {"Fecha Adquisición", "Fecha Tasación"}
+
+def clean_value(value, field_name):
+    """Limpia y convierte el valor según el tipo de campo."""
+    if value is None or value == "" or (isinstance(value, str) and value.strip() == ""):
+        return None
+    
+    # Fechas
+    if field_name in DATE_FIELDS:
+        if isinstance(value, (datetime.date, datetime.datetime)):
+            return value.strftime("%Y-%m-%d")
+        if isinstance(value, str):
+            return value.strip()
+        return None
+    
+    # Numéricos
+    if field_name in NUMERIC_FIELDS:
+        try:
+            if isinstance(value, float) and value == int(value):
+                return int(value)
+            return value
+        except (ValueError, TypeError):
+            return None
+    
+    # Strings
+    if isinstance(value, str):
+        cleaned = value.strip()
+        # Eliminar _x000D_ (retorno de carro de Excel)
+        cleaned = cleaned.replace("_x000D_", "").replace("\r\n", "\n").replace("\r", "\n")
+        return cleaned if cleaned else None
+    
+    if isinstance(value, float) and value == int(value):
+        return int(value)
+    
+    return value
+
 
 def excel_to_json():
-    """Convierte el archivo Excel de minerales a JSON"""
-    
-    # Rutas de archivos
-    excel_file = "Coleccion de minerales.xlsx"
-    json_file = "catalogo_minerales.json"
-    backup_file = f"catalogo_minerales_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    
-    print("-" * 60)
-    print("CONVERSOR EXCEL -> JSON - CATALOGO DE MINERALES")
-    print("-" * 60)
-    
-    # Verificar que existe el archivo Excel
-    if not os.path.exists(excel_file):
-        print(f"Error: No se encuentra el archivo '{excel_file}'")
-        print(f"   Asegurate de que el archivo este en la misma carpeta que este script.")
-        return False
-    
-    print(f"\nArchivo Excel encontrado: {excel_file}")
-    
-    # Hacer backup del JSON actual si existe
-    if os.path.exists(json_file):
-        print(f"   Creando backup del JSON actual...")
-        with open(json_file, 'r', encoding='utf-8') as f:
-            backup_data = f.read()
-        with open(backup_file, 'w', encoding='utf-8') as f:
-            f.write(backup_data)
-        print(f"   Backup guardado como: {backup_file}")
-    
-    try:
-        # Leer el archivo Excel
-        print(f"\nLeyendo archivo Excel...")
-        df = pd.read_excel(excel_file, engine='openpyxl')
-        
-        print(f"   Archivo leido correctamente")
-        print(f"   Total de minerales: {len(df)}")
-        
-        # Mostrar las primeras columnas para verificar
-        print(f"\nColumnas encontradas ({len(df.columns)}):")
-        for i, col in enumerate(df.columns, 1):
-            print(f"   {i:2d}. {col}")
-        
-        # Reemplazar NaN con valores apropiados
-        print(f"\nProcesando datos...")
-        
-        # Primero, convertir las fechas a string o None para evitar NaTType errors
-        date_columns = ['Fecha Adquisición', 'Fecha Tasación']
-        for col in date_columns:
-            if col in df.columns:
-                df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) and hasattr(x, 'strftime') else (str(x) if pd.notnull(x) else None))
-        
-        # Reemplazar todos los demas NaN con None para que se convierta en null en JSON
-        # Usamos mask para evitar problemas con tipos de datos mixtos
-        df = df.astype(object).where(pd.notna(df), None)
-        
-        # Convertir a lista de diccionarios
-        data = df.to_dict(orient='records')
-        
-        # Limpieza final: asegurarnos de que no queda ningun valor float('nan') en el diccionario
-        def clean_nan(obj):
-            if isinstance(obj, list):
-                return [clean_nan(i) for i in obj]
-            elif isinstance(obj, dict):
-                return {k: clean_nan(v) for k, v in obj.items()}
-            elif isinstance(obj, float) and pd.isna(obj):
-                return None
-            return obj
+    print(f"Leyendo {EXCEL_FILE}...")
+    wb = openpyxl.load_workbook(EXCEL_FILE)
+    ws = wb.active
 
-        data = clean_nan(data)
-        
-        # Convertir a JSON con formato bonito
-        print(f"\nGenerando JSON...")
-        json_data = json.dumps(data, ensure_ascii=False, indent=2)
-        
-        # Guardar el archivo JSON
-        with open(json_file, 'w', encoding='utf-8') as f:
-            f.write(json_data)
-        
-        print(f"   JSON generado correctamente")
-        
-        # Estadísticas finales
-        print(f"\n" + "-" * 60)
-        print(f"CONVERSION COMPLETADA EXITOSAMENTE")
-        print(f"-" * 60)
-        print(f"\nArchivo generado: {json_file}")
-        print(f"Total de minerales: {len(data)}")
-        
-        # Calcular estadísticas
-        paises = df['Pais'].value_counts()
-        print(f"\nMinerales por pais (Top 5):")
-        for pais, count in paises.head(5).items():
-            print(f"   - {pais}: {count}")
-        
-        if 'Valor estimado (€)' in df.columns:
-            valor_total = df['Valor estimado (€)'].sum()
-            if pd.notna(valor_total):
-                print(f"\nValor total estimado: {valor_total:,.2f} EUR")
-        
-        print(f"\nListo! Ahora puedes:")
-        print(f"   1. Verificar el catalogo localmente: python -m http.server 8000")
-        print(f"   2. Subir los cambios a GitHub: git add . && git commit -m 'Actualizar catalogo' && git push")
-        print(f"\n" + "-" * 60)
-        
-        return True
-        
-    except Exception as e:
-        print(f"\nError durante la conversion:")
-        print(f"   {str(e)}")
-        print(f"\nSugerencias:")
-        print(f"   - Verifica que el archivo Excel no este abierto en otra aplicacion")
-        print(f"   - Asegurate de tener instalado: pip install pandas openpyxl")
-        print(f"   - Revisa que el formato del Excel sea correcto")
-        return False
+    # Leer cabeceras de la primera fila
+    headers = [cell.value for cell in ws[1]]
+    print(f"Cabeceras encontradas: {headers}")
+    print(f"Total de filas de datos: {ws.max_row - 1}")
+
+    # Hacer backup del JSON actual
+    if os.path.exists(JSON_FILE):
+        from datetime import datetime as dt
+        backup_name = f"catalogo_minerales_backup_{dt.now().strftime('%Y%m%d_%H%M%S')}.json"
+        shutil.copy2(JSON_FILE, backup_name)
+        print(f"Backup creado: {backup_name}")
+
+    # Construir lista de registros
+    records = []
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        # Saltar filas completamente vacías
+        if all(v is None or v == "" for v in row):
+            continue
+
+        record = {}
+        for col_idx, header in enumerate(headers):
+            if header is None:
+                continue
+            value = row[col_idx] if col_idx < len(row) else None
+            cleaned = clean_value(value, header)
+            record[header] = cleaned
+
+        # Solo incluir si tiene número de inventario
+        inv = record.get(headers[0])
+        if inv:
+            records.append(record)
+
+    print(f"Registros procesados: {len(records)}")
+
+    # Guardar JSON
+    with open(JSON_FILE, "w", encoding="utf-8") as f:
+        json.dump(records, f, ensure_ascii=False, indent=2)
+
+    print(f"JSON guardado en {JSON_FILE}")
+    
+    # Mostrar M-004 para verificar
+    for r in records:
+        if r.get(headers[0]) == "M-004":
+            print("\n--- M-004 ---")
+            try:
+                print(json.dumps(r, ensure_ascii=False, indent=2))
+            except UnicodeEncodeError:
+                print(json.dumps(r, ensure_ascii=True, indent=2))
+            break
+
+    return len(records)
+
 
 if __name__ == "__main__":
-    excel_to_json()
+    count = excel_to_json()
+    print(f"\nTotal minerales en el catálogo: {count}")
